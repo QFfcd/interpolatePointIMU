@@ -15,7 +15,7 @@ using namespace cv;
 ImageStabilizationUpdate::ImageStabilizationUpdate()
 {
     /* Phan nay in ket qua ra log file de check voi ket qua matlab*/
-    const char* filename = "/home/ngoclth/Documents/stabImg/stabUAV/targetEstimate2.txt";
+    const char* filename = "/home/ngoclth/Documents/stabImg/stabUAV/targetEstimate.txt";
     const char* mode = "w";
 
 
@@ -211,15 +211,15 @@ void ImageStabilizationUpdate::processIMUdata(double roll, double pitch, double 
         deltaPitch = pitch - PitchPrevious;
         deltaRoll = roll - RollPrevious;
 
-        F2Finfo[2] = tan((yaw - YawPrevious) * 3.14 / 180);
-        F2Finfo[1] = tan((pitch - PitchPrevious) * 3.14 / 180);
+        F2Finfo[2] = tan((yaw - YawPrevious) * M_PI / 180);
+        F2Finfo[1] = tan((pitch - PitchPrevious) * M_PI / 180);
         F2Finfo[0] = roll - RollPrevious;
 
         RollArray.push_back(RollArray.back() + F2Finfo[0]);
         PitchArray.push_back(PitchArray.back() + F2Finfo[1]);
         YawArray.push_back(YawArray.back() + F2Finfo[2]);
 
-        this->ScaleImage = tan(this->hFov * 3.1416 / 360) / tan(hfov * 3.1416 / 360);// Gia su neu Fov toi <Fov frame truoc=> zoom in=>scale>1;
+        this->ScaleImage = tan(this->hFov * M_PI / 360) / tan(hfov * M_PI / 360);// Gia su neu Fov toi <Fov frame truoc=> zoom in=>scale>1;
         this->hFov = hfov;
     }
 
@@ -278,19 +278,19 @@ void ImageStabilizationUpdate::readFeatureExtract(cv::Mat framePrevious, cv::Mat
         }
     }
     // Estimate transformation matrix (affine transformation)
-    if (prevGoodPoints.size() >= 16) {
-        transformMat = cv::estimateAffine2D(prevGoodPoints, currGoodPoints);
-        std::cout << "Su dung FeatureExtraction" << std::endl;
-        // ve cac anh feature point de xem hieu qua cua feature exxtra
-    }
-    else {
+//    if (prevGoodPoints.size() >= 16) {
+//        transformMat = cv::estimateAffine2D(prevGoodPoints, currGoodPoints);
+//        std::cout << "Su dung FeatureExtraction" << std::endl;
+//        // ve cac anh feature point de xem hieu qua cua feature exxtra
+//    }
+//    else {
         cv::Point2f centerImage(static_cast<float> (1920 / 2), static_cast<float>(1080 / 2));
-        float f = framePrevious.cols / (2 * tan(hFov * 3.1416 / 360));
+        float f = framePrevious.cols / (2 * tan(hFov * M_PI / 360));
         cv::Mat affineMatrix = cv::getRotationMatrix2D(centerImage, -F2Finfo[0], ScaleImage);
         affineMatrix.at<double>(0, 2) += -F2Finfo[2] * f; // x
         affineMatrix.at<double>(1, 2) += -F2Finfo[1] * f;// y
         transformMat = affineMatrix;
-    }
+//    }
 }
 void ImageStabilizationUpdate::imwarpPoint(double Target_x_FrameBefore, double Target_y_FrameBefore)
 {
@@ -307,7 +307,7 @@ void ImageStabilizationUpdate::imwarpPoint(double Target_x_FrameBefore, double T
     // loi do khong match chieu
     Target_x = p_prime.at<double>(0);
     Target_y = p_prime.at<double>(1);
-    fprintf(fp, "%f %f %f %f %f %f %f %f %f %f \n", Target_x_FrameBefore, Target_y_FrameBefore, Target_x, Target_y, roll100HzInterpolate, -pitch100HzInterpolate, yaw100HzInterpolate, deltaYaw, deltaPitch, deltaRoll);
+    fprintf(fp, "%.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f \n", Target_x_FrameBefore, Target_y_FrameBefore, Target_x, Target_y, roll100HzInterpolate, -pitch100HzInterpolate, yaw100HzInterpolate, deltaYaw, deltaPitch, deltaRoll);
 //    fprintf(fp, "%f %f \n", Target_x, Target_y);
 }
 cv::Mat ImageStabilizationUpdate::stabilizing(cv::Mat frame)
